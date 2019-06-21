@@ -360,5 +360,7 @@ class Chatbot:
  Reference:
  
  1.[NLP Models tensorflow](https://github.com/huseinzol05/NLP-Models-Tensorflow/tree/master/chatbot)
+ 
  2.[真正的完全图解seq2seq attention模型](https://zhuanlan.zhihu.com/p/40920384)
+ 
  3.[深度学习：transformer模型](https://blog.csdn.net/pipisorry/article/details/84946653)
