@@ -124,7 +124,7 @@
  dot-product attention, 公式为：
  
  
-                   ##### Attention(Q,K,V) = softmax(Q*K<sup>T</sup>/sqrt(d<sub>k</sub>))V
+ #####                Attention(Q,K,V) = softmax(Q*K<sup>T</sup>/sqrt(d<sub>k</sub>))V
  
  
  2. Multi-head self attention
@@ -138,7 +138,7 @@
  一个线形激活函数，公式为
  
  
-                  ##### PWFFN(Z) = max(0, W<sub>1</sub>Z+b<sub>1</sub>)W<sub>2</sub>+b<sub>2</sub>
+ #####                PWFFN(Z) = max(0, W<sub>1</sub>Z+b<sub>1</sub>)W<sub>2</sub>+b<sub>2</sub>
  
  
  4. Positional encoding
@@ -147,8 +147,8 @@
  embedding的数据相加, positional encoding的方法可以为用不同频率的sine和cosine函数直接进行计算，公式为
  
  
-                 ##### PE(pos, 2i) = sin(pos/10000<sup>2i/d<sup>model</sup></sup>)
-                 ##### PE(pos, 2i+1) = cos(pos/10000<sup>2i/d<sup>model</sup></sup>)
+ #####               PE(pos, 2i) = sin(pos/10000<sup>2i/d<sup>model</sup></sup>)
+ #####               PE(pos, 2i+1) = cos(pos/10000<sup>2i/d<sup>model</sup></sup>)
  
  
  transformer在tensorflow中的实现代码为：
