@@ -123,9 +123,9 @@
  self-attention就是取Q, K, V相同，是word embedding和position embedding相加的结果，它的线形变换采用了scaled 
  dot-product attention, 公式为：
  
- ```markdown
- Attention(Q,K,V) = softmax(Q*K<sup>T</sup>/sqrt(d<sub>k</sub>))V
- ```
+ 
+ ##### Attention(Q,K,V) = softmax(Q*K<sup>T</sup>/sqrt(d<sub>k</sub>))V
+ 
  
  2. Multi-head self attention
  
@@ -137,19 +137,19 @@
  Position-wise feed forward networks实际上就是一个多层感知机网络，它包括两层dense,第一层的激活函数为ReLU，第二层为
  一个线形激活函数，公式为
  
- ```markdown
- PWFFN(Z) = max(0, W<sub>1</sub>Z+b<sub>1</sub>)W<sub>2</sub>+b<sub>2</sub>
- ```
+ 
+ ##### PWFFN(Z) = max(0, W<sub>1</sub>Z+b<sub>1</sub>)W<sub>2</sub>+b<sub>2</sub>
+ 
  
  4. Positional encoding
  
  Positional encoding是对于数据的预处理使模型能够对顺序序列进行处理，transformer将positional encoding后的数据和
  embedding的数据相加, positional encoding的方法可以为用不同频率的sine和cosine函数直接进行计算，公式为
  
- ```markdown
- PE(pos, 2i) = sin(pos/10000<sup>2i/d<sup>model</sup></sup>)
- PE(pos, 2i+1) = cos(pos/10000<sup>2i/d<sup>model</sup></sup>)
- ```
+ 
+ ##### PE(pos, 2i) = sin(pos/10000<sup>2i/d<sup>model</sup></sup>)
+ ##### PE(pos, 2i+1) = cos(pos/10000<sup>2i/d<sup>model</sup></sup>)
+ 
  
  transformer在tensorflow中的实现代码为：
  
@@ -348,7 +348,7 @@ class Chatbot:
  ```
  
  在20个epoch之后的结果为：
- ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/transfomer_result.JPG)
+ ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/transfomer_result.png)
  
  
  
