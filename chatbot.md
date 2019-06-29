@@ -28,7 +28,7 @@
  1. seq2seq
  2. transformer
  3. birnn-seq2seq-greedy
- 4. memory network
+ 
 
  ## 1. seq2seq
  
@@ -50,7 +50,7 @@
  ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/seq2seq_attn.JPG)
  ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/seq2seq_attn_2.JPG)
  
- 在tensorflow中的代码如下
+ 在tensorflow中的代码如下(不包含attention)
  ```markdown
  class Chatbot:
     def __init__(self, size_layer, num_layers, embedded_size,
@@ -97,7 +97,7 @@
  ```
  
  我们使用Cornell movie dialogs corpus作为输入数据 [cornell movie corpus](https://github.com/JiaweiYu1/JiaweiYu1.github.io/tree/master/cornell%20movie-dialogs%20corpus)
- 在20个epoch之后的结果为
+ 在20个epoch之后的训练结果为
  ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/seq2seq_result.png)
  
  ## 2. transformer
@@ -347,8 +347,110 @@ class Chatbot:
         self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
  ```
  
- 在20个epoch之后的结果为：
+ 在20个epoch之后的训练结果为：
  ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/transfomer_result.png)
+ 
+ 
+ ## 3. birnn-seq2seq-greedy
+ 
+ 我们之前的seq2seq模型使用的是单向RNN构成，由于单向的RNN在时序上处理序列，所以会忽略未来的上下文的信息，因此，我们使用
+ 双向RNN模型(birnn)。基本思想是每一个序列向前或者向后分别是两个RNN，两个都连着一个输出层，如下图：
+ 
+ ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/birnn_seq2seq.jpg)
+ 
+ 实现代码如下：
+ 
+ ```markdown
+ class Chatbot:
+    def __init__(self, size_layer, num_layers, embedded_size, 
+                 from_dict_size, to_dict_size, learning_rate, 
+                 batch_size, dropout = 0.5, beam_width = 15):
+        
+        def lstm_cell(size, reuse=False):
+            return tf.nn.rnn_cell.LSTMCell(size, initializer=tf.orthogonal_initializer(),
+                                           reuse=reuse)
+        
+        self.X = tf.placeholder(tf.int32, [None, None])
+        self.Y = tf.placeholder(tf.int32, [None, None])
+        self.X_seq_len = tf.count_nonzero(self.X, 1, dtype=tf.int32)
+        self.Y_seq_len = tf.count_nonzero(self.Y, 1, dtype=tf.int32)
+        batch_size = tf.shape(self.X)[0]
+        # encoder
+        encoder_embeddings = tf.Variable(tf.random_uniform([from_dict_size, embedded_size], -1, 1))
+        encoder_embedded = tf.nn.embedding_lookup(encoder_embeddings, self.X)
+        for n in range(num_layers):
+            (out_fw, out_bw), (state_fw, state_bw) = tf.nn.bidirectional_dynamic_rnn(
+                cell_fw = lstm_cell(size_layer // 2),
+                cell_bw = lstm_cell(size_layer // 2),
+                inputs = encoder_embedded,
+                sequence_length = self.X_seq_len,
+                dtype = tf.float32,
+                scope = 'bidirectional_rnn_%d'%(n))
+            encoder_embedded = tf.concat((out_fw, out_bw), 2)
+        
+        bi_state_c = tf.concat((state_fw.c, state_bw.c), -1)
+        bi_state_h = tf.concat((state_fw.h, state_bw.h), -1)
+        bi_lstm_state = tf.nn.rnn_cell.LSTMStateTuple(c=bi_state_c, h=bi_state_h)
+        self.encoder_state = tuple([bi_lstm_state] * num_layers)
+        
+        self.encoder_state = tuple(self.encoder_state[-1] for _ in range(num_layers))
+        main = tf.strided_slice(self.Y, [0, 0], [batch_size, -1], [1, 1])
+        decoder_input = tf.concat([tf.fill([batch_size, 1], GO), main], 1)
+        # decoder
+        decoder_embeddings = tf.Variable(tf.random_uniform([to_dict_size, embedded_size], -1, 1))
+        decoder_cells = tf.nn.rnn_cell.MultiRNNCell([lstm_cell(size_layer) for _ in range(num_layers)])
+        dense_layer = tf.layers.Dense(to_dict_size)
+        training_helper = tf.contrib.seq2seq.TrainingHelper(
+                inputs = tf.nn.embedding_lookup(decoder_embeddings, decoder_input),
+                sequence_length = self.Y_seq_len,
+                time_major = False)
+        training_decoder = tf.contrib.seq2seq.BasicDecoder(
+                cell = decoder_cells,
+                helper = training_helper,
+                initial_state = self.encoder_state,
+                output_layer = dense_layer)
+        training_decoder_output, _, _ = tf.contrib.seq2seq.dynamic_decode(
+                decoder = training_decoder,
+                impute_finished = True,
+                maximum_iterations = tf.reduce_max(self.Y_seq_len))
+        predicting_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+                embedding = decoder_embeddings,
+                start_tokens = tf.tile(tf.constant([GO], dtype=tf.int32), [batch_size]),
+                end_token = EOS)
+        predicting_decoder = tf.contrib.seq2seq.BasicDecoder(
+                cell = decoder_cells,
+                helper = predicting_helper,
+                initial_state = self.encoder_state,
+                output_layer = dense_layer)
+        predicting_decoder_output, _, _ = tf.contrib.seq2seq.dynamic_decode(
+                decoder = predicting_decoder,
+                impute_finished = True,
+                maximum_iterations = 2 * tf.reduce_max(self.X_seq_len))
+        self.training_logits = training_decoder_output.rnn_output
+        self.predicting_ids = predicting_decoder_output.sample_id
+        masks = tf.sequence_mask(self.Y_seq_len, tf.reduce_max(self.Y_seq_len), dtype=tf.float32)
+        self.cost = tf.contrib.seq2seq.sequence_loss(logits = self.training_logits,
+                                                     targets = self.Y,
+                                                     weights = masks)
+        self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cost)
+        y_t = tf.argmax(self.training_logits,axis=2)
+        y_t = tf.cast(y_t, tf.int32)
+        self.prediction = tf.boolean_mask(y_t, masks)
+        mask_label = tf.boolean_mask(self.Y, masks)
+        correct_pred = tf.equal(self.prediction, mask_label)
+        correct_index = tf.cast(correct_pred, tf.float32)
+        self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+ ```
+ 
+ 在20个epoch之后的训练结果为：
+ [!Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/birnn_result_train.png)
+ 
+ 训练集的BLEU score为0.826，测试集的BLEU score为0.702
+ 
+ 
+ # 总结
+ 
+最初的seq2seq我们使用最基本的RNN模型，并且没有加入attention，虽然我们输入的数据长度十分短，但结果依然不是很好。之后使用transformer模型，我们引入multi-head self attention，结果有所提高。最后我们使用以LSTM为基础的birnn-seq2seq模型，结果又有所提高。
  
  
  
