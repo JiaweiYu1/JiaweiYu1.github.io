@@ -445,7 +445,7 @@ class Chatbot:
  ```
  
  在20个epoch之后的训练结果为：
- [!Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/birnn_result_train.png)
+ ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/birnn_result_train.png)
  
  训练集的BLEU score为0.826，测试集的BLEU score为0.702
  
