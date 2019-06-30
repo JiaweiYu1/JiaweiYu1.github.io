@@ -96,9 +96,10 @@
         self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
  ```
  
- 我们使用Cornell movie dialogs corpus作为输入数据 [cornell movie corpus](https://github.com/JiaweiYu1/JiaweiYu1.github.io/tree/master/cornell%20movie-dialogs%20corpus)
- 在20个epoch之后的训练结果为
- ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/seq2seq_result.png)
+ 我们使用Cornell movie dialogs corpus,抽样选取问题与答案长度为2到5作为输入数据 [cornell movie corpus](https://github.com/JiaweiYu1/JiaweiYu1.github.io/tree/master/cornell%20movie-dialogs%20corpus)
+ 在30个epoch之后的训练BLEU score为0.543
+ ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/seq2seq_train_result.png)
+ 测试集BLEU score为0.389
  
  ## 2. transformer
  
@@ -347,8 +348,9 @@ class Chatbot:
         self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
  ```
  
- 在20个epoch之后的训练结果为：
- ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/transfomer_result.png)
+ 在30个epoch之后的训练BLEU score为0.785：
+ ![Image](https://github.com/JiaweiYu1/JiaweiYu1.github.io/blob/master/images/transformer_train_result.png)
+ 测试集BLEU score为0.649
  
  
  ## 3. birnn-seq2seq-greedy
